@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Different Flowers Everywhere</title>
+<style>
+  :root{
+    --pink:#f7c6d9;
+    --deep-pink:#e88aab;
+    --green:#6b8f71;
+    --cream:#fffaf3;
+    --purple:#9b6b9e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;font-family:'Georgia',serif;background:var(--cream);color:#3a3a3a;overflow-x:hidden;}
+
+  /* Falling petals canvas */
+  #petal-canvas{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    pointer-events:none;z-index:9999;
+  }
+
+  header{
+    position:relative;
+    height:80vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    overflow:hidden;
+    background:linear-gradient(135deg,#ffe3ee,#ffd6e8,#f9c6dc);
+  }
+  header video{
+    position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0.55;filter:saturate(1.1);
+  }
+  header .overlay{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    background:radial-gradient(circle at 50% 30%, rgba(255,255,255,0.1), rgba(255,255,255,0.55) 80%);
+  }
+  header h1{
+    position:relative;
+    font-size:4rem;
+    color:#7a3b56;
+    text-shadow:0 4px 18px rgba(255,255,255,0.8);
+    margin:0;
+    z-index:2;
+    animation:fadeDown 1.4s ease-out;
+  }
+  header p.subtitle{
+    position:relative;
+    z-index:2;
+    font-size:1.3rem;
+    max-width:700px;
+    margin-top:1rem;
+    color:#5a3046;
+    animation:fadeUp 1.8s ease-out;
+  }
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-40px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
+
+  .scroll-hint{
+    position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+    z-index:2;font-size:.9rem;color:#7a3b56;animation:bounce 2s infinite;
+  }
+  @keyframes bounce{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,10px);}}
+
+  main{
+    max-width:1000px;
+    margin:0 auto;
+    padding:3rem 1.5rem 6rem;
+  }
+
+  .intro{
+    text-align:center;
+    font-size:1.2rem;
+    line-height:1.7;
+    margin-bottom:4rem;
+    opacity:0;
+    transform:translateY(30px);
+    transition:all .8s ease-out;
+  }
+  .intro.visible{opacity:1;transform:translateY(0);}
+
+  .flower-section{
+    display:flex;
+    gap:2.5rem;
+    align-items:center;
+    margin-bottom:5rem;
+    opacity:0;
+    transform:translateY(50px);
+    transition:all .9s cubic-bezier(.2,.8,.2,1);
+  }
+  .flower-section.visible{opacity:1;transform:translateY(0);}
+  .flower-section:nth-child(even){flex-direction:row-reverse;}
+
+  .flower-media{
+    flex:1 1 45%;
+    min-width:260px;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 20px 40px rgba(0,0,0,0.15);
+    position:relative;
+  }
+  .flower-media img{
+    width:100%;display:block;
+    transition:transform .6s ease;
+  }
+  .flower-media:hover img{transform:scale(1.08) rotate(-1deg);}
+
+  .flower-text{flex:1 1 50%;}
+  .flower-text h2{
+    font-size:2.2rem;
+    color:var(--deep-pink);
+    margin-bottom:.3rem;
+    position:relative;
+    display:inline-block;
+  }
+  .flower-text h2::after{
+    content:'';
+    display:block;
+    width:60px;height:4px;
+    background:var(--purple);
+    border-radius:3px;
+    margin-top:6px;
+    animation:growLine 1.2s ease forwards;
+  }
+  @keyframes growLine{from{width:0;}to{width:60px;}}
+
+  .flower-text p{line-height:1.7;font-size:1.05rem;}
+
+  .did-you-know{
+    background:rgba(247,198,217,0.35);
+    border-left:4px solid var(--deep-pink);
+    border-radius:10px;
+    padding:1rem 1.2rem;
+    margin-top:1rem;
+  }
+  .did-you-know strong{color:var(--purple);}
+  .did-you-know ul{margin:.5rem 0 0 1rem;padding:0;}
+  .did-you-know li{margin-bottom:.4rem;}
+
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:1rem;
+    margin:1.5rem 0 5rem;
+  }
+  .gallery img{
+    width:100%;height:180px;object-fit:cover;border-radius:14px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.12);
+    transition:transform .4s ease, box-shadow .4s ease;
+    opacity:0;
+    transform:scale(.85);
+  }
+  .gallery img.visible{opacity:1;transform:scale(1);transition:all .6s ease;}
+  .gallery img:hover{transform:scale(1.06) translateY(-5px);box-shadow:0 16px 30px rgba(0,0,0,0.22);}
+
+  .video-section{
+    text-align:center;
+    margin-bottom:5rem;
+  }
+  .video-section video{
+    width:100%;
+    max-width:800px;
+    border-radius:18px;
+    box-shadow:0 18px 35px rgba(0,0,0,0.18);
+  }
+
+  .wrapup{
+    background:linear-gradient(135deg,#fbe7f0,#f3e2f7);
+    border-radius:24px;
+    padding:2.5rem;
+    line-height:1.8;
+    font-size:1.05rem;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    opacity:0;
+    transform:translateY(40px);
+    transition:all .9s ease;
+  }
+  .wrapup.visible{opacity:1;transform:translateY(0);}
+  .wrapup h2{color:var(--purple);text-align:center;font-size:2rem;margin-top:0;}
+
+  footer{
+    text-align:center;
+    padding:2rem;
+    color:#8a6b7a;
+    font-size:.9rem;
+  }
+
+  @media(max-width:700px){
+    .flower-section, .flower-section:nth-child(even){flex-direction:column;}
+    header h1{font-size:2.6rem;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="petal-canvas"></canvas>
+
+<header>
+  <video autoplay muted loop playsinline>
+    <source src="https://cdn.coverr.co/videos/coverr-pink-flowers-in-the-wind-9573/1080p.mp4" type="video/mp4">
+  </video>
+  <div class="overlay"></div>
+  <h1>Different Flowers Everywhere</h1>
+  <p class="subtitle">Have you ever wondered how many types of flowers exist in the world? There are between 350,000 and 400,000 species — let's explore three of the most beautiful.</p>
+  <div class="scroll-hint">↓ scroll to explore ↓</div>
+</header>
+
+<main>
+
+  <p class="intro">To start, there are lots of types of flowers — between 350,000 and 400,000 of them. For now, let's look at the top three most beautiful flowers of them all.</p>
+
+  <!-- Cherry Blossom -->
+  <section class="flower-section">
+    <div class="flower-media">
+      <img src="https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=900&q=80" alt="Cherry Blossom">
+    </div>
+    <div class="flower-text">
+      <h2>Cherry Blossoms</h2>
+      <p>Cherry blossoms come from cherry trees, mainly of the genus <em>Prunus</em>. They're most famous in Japan, where they're called <strong>Sakura</strong>, but they also grow in Korea, China, the US, and parts of Europe.</p>
+      <div class="did-you-know">
+        <strong>DID YOU KNOW</strong>
+        <ul>
+          <li>Cherry blossom trees can take years to mature and bloom fully.</li>
+          <li>Most cherry blossom trees don't produce edible fruit — the cherries you eat come from different cultivated varieties.</li>
+          <li>Washington D.C. has a famous cherry blossom festival every spring, from trees gifted by Japan in 1912 as a symbol of friendship.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="gallery" id="gallery-cherry">
+    <img src="https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=500&q=70">
+    <img src="https://images.unsplash.com/photo-1457089328109-e5d9bd499191?auto=format&fit=crop&w=500&q=70">
+    <img src="https://images.unsplash.com/photo-1554931670-4ebfabf6e7a9?auto=format&fit=crop&w=500&q=70">
+  </div>
+
+  <!-- Rosemary -->
+  <section class="flower-section">
+    <div class="flower-media">
+      <img src="https://images.unsplash.com/photo-1515586000433-45406d8e6662?auto=format&fit=crop&w=900&q=80" alt="Rosemary">
+    </div>
+    <div class="flower-text">
+      <h2>Rosemary</h2>
+      <p>Rosemary (<em>Salvia rosmarinus</em>, formerly <em>Rosmarinus officinalis</em>) is actually an herb, not just a flower — it's part of the mint family, native to the Mediterranean region.</p>
+      <div class="did-you-know">
+        <strong>DID YOU KNOW</strong>
+        <ul>
+          <li>It's one of the most popular cooking herbs in the world, especially in Mediterranean dishes.</li>
+          <li>It's also used in aromatherapy and traditional medicine.</li>
+          <li>Very drought-resistant — it thrives with little water.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="gallery" id="gallery-rosemary">
+    <img src="https://images.unsplash.com/photo-1602940659805-770d1b3f3a3c?auto=format&fit=crop&w=500&q=70">
+    <img src="https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?auto=format&fit=crop&w=500&q=70">
+    <img src="https://images.unsplash.com/photo-1604908554007-99dd6abf9f6a?auto=format&fit=crop&w=500&q=70">
+  </div>
+
+  <!-- Tulip -->
+  <section class="flower-section">
+    <div class="flower-media">
+      <img src="https://images.unsplash.com/photo-1520763185298-1b434c919102?auto=format&fit=crop&w=900&q=80" alt="Tulip">
+    </div>
+    <div class="flower-text">
+      <h2>Tulip</h2>
+      <p>Tulips belong to the genus <em>Tulipa</em>, part of the lily family. They're native to Central Asia, but became massively popular in the Netherlands, now world-famous for its tulip fields.</p>
+      <div class="did-you-know">
+        <strong>DID YOU KNOW</strong>
+        <ul>
+          <li>The Netherlands produces billions of tulip bulbs every year.</li>
+          <li>Tulips can continue to grow slightly even after being cut and placed in a vase.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="gallery" id="gallery-tulip">
+    <img src="https://images.unsplash.com/photo-1462630376794-3cf07a9a3fc1?auto=format&fit=crop&w=500&q=70">
+    <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=500&q=70">
+    <img src="https://images.unsplash.com/photo-1490305355665-2480b7c41562?auto=format&fit=crop&w=500&q=70">
+  </div>
+
+  <div class="video-section">
+    <h2 style="color:var(--purple);">Watch Flowers Bloom</h2>
+    <video controls muted loop playsinline poster="https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=900&q=80">
+      <source src="https://cdn.coverr.co/videos/coverr-spring-flowers-blooming-4988/1080p.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <div class="wrapup">
+    <h2>To Wrap Up</h2>
+    <p>Cherry blossoms, native to Japan and other parts of Asia, bloom in soft pink and white shades for just one to two weeks each spring, symbolizing beauty and the fleeting nature of life. Rosemary, a Mediterranean herb with small blue or lavender flowers, blooms mainly in spring and represents remembrance and loyalty, alongside its popular use in cooking. Tulips, originally from Central Asia and now famously grown in the Netherlands, bloom in early to mid-spring with vivid colors like red, yellow, and purple, symbolizing perfect love and elegance. All three — cherry blossoms, rosemary, and tulips — are complete, perfect flowers, meaning each one has petals, sepals, stamens, and a pistil.</p>
+  </div>
+
+</main>
+
+<footer>🌸 Made with love for flowers everywhere 🌸</footer>
+
+<script>
+// ---- Scroll reveal animations ----
+const revealEls = document.querySelectorAll('.intro, .flower-section, .wrapup, .gallery img');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+    }
+  });
+},{threshold:0.15});
+revealEls.forEach(el=>io.observe(el));
+
+// ---- Falling petals canvas animation ----
+const canvas = document.getElementById('petal-canvas');
+const ctx = canvas.getContext('2d');
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+resize();
+window.addEventListener('resize', resize);
+
+const petalColors = ['#f7c6d9','#f3a6c4','#fbdce8','#e88aab'];
+const petals = Array.from({length: 28}, () => createPetal());
+
+function createPetal(){
+  return {
+    x: Math.random()*window.innerWidth,
+    y: Math.random()*-window.innerHeight,
+    size: 8 + Math.random()*10,
+    speedY: 0.6 + Math.random()*1.2,
+    speedX: Math.random()*1 - 0.5,
+    rotation: Math.random()*360,
+    rotationSpeed: Math.random()*2 - 1,
+    color: petalColors[Math.floor(Math.random()*petalColors.length)],
+    sway: Math.random()*2*Math.PI
+  };
+}
+
+function drawPetal(p){
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rotation * Math.PI/180);
+  ctx.fillStyle = p.color;
+  ctx.beginPath();
+  ctx.ellipse(0,0,p.size*0.5,p.size,Math.PI/4,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  petals.forEach(p=>{
+    p.sway += 0.02;
+    p.y += p.speedY;
+    p.x += p.speedX + Math.sin(p.sway)*0.5;
+    p.rotation += p.rotationSpeed;
+    if(p.y > window.innerHeight + 20){
+      p.y = -20;
+      p.x = Math.random()*window.innerWidth;
+    }
+    drawPetal(p);
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
